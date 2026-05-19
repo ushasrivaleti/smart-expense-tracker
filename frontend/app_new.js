@@ -1272,7 +1272,7 @@ class SavingsGoalManager {
         console.log(`[Goals] Fetching for ${store.currentUserEmail}...`);
         try {
             const safeEmail = encodeURIComponent(store.currentUserEmail);
-            const res = await fetch(`/api/goals/${safeEmail}`);
+            const res = await fetch(`${API_BASE}/api/goals/${safeEmail}`);
             if (res.ok) {
                 this.goals = await res.json();
                 console.log(`[Goals] Successfully fetched ${this.goals.length} goals.`);
