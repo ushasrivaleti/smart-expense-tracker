@@ -1,4 +1,5 @@
 // --- Local Error Handler ---
+const API_BASE = "https://smart-expense-tracker-pkfc.onrender.com";
 window.onerror = function(msg, url, line, col, error) {
     const errorDetail = `${msg} (Line: ${line})`;
     console.error("[Global Error]", errorDetail);
@@ -1301,11 +1302,11 @@ class SavingsGoalManager {
                 deadline: deadlineInput.value || null
             };
 
-            const res = await fetch('/api/goals', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            const res = await fetch(`${API_BASE}/api/goals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+      });
 
             if (res.ok) {
                 ToastManager.show('Goal Created', 'Your new savings goal is active!', '🏆');
@@ -1660,11 +1661,11 @@ document.addEventListener('DOMContentLoaded', () => {
             submitBtn.textContent = 'Resetting...';
 
             try {
-                const response = await fetch('/api/auth/reset-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, phone, newPassword })
-                });
+                const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, phone, newPassword })
+          });
 
                 const result = await response.json();
 
@@ -2204,12 +2205,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         comments: commentsEl.value.trim()
                     };
 
-                    const response = await fetch('/api/feedback', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                    const response = await fetch(`${API_BASE}/api/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                     });
-
                     if (!response.ok) {
                         throw new Error('Server returned an error.');
                     }

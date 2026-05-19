@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -12,7 +13,7 @@ const path = require('path');
 app.use(express.static(path.join(__dirname, '..', 'frontend'))); // Serve static files from the frontend directory
 
 // MongoDB connection
-mongoose.connect('mongodb://127.0.0.1:27017/expense_tracker')
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('Error connecting to MongoDB:', err));
 
@@ -132,7 +133,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/feedback', async (req, res) => {
   try {
     const { name, email, rating, comments } = req.body;
-    
+
     // Detailed Terminal Logging
     console.log('\n=========================');
     console.log('📬 NEW FEEDBACK RECEIVED');
