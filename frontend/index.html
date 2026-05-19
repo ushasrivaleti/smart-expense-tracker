@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Smart Daily Expense Tracker - An intelligent, student-focused personal finance manager with budget predictions, category analysis, and real-time alerts.">
+    <title>Smart Daily Expense Tracker | Intelligent Finance Manager</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Anti-flash: apply saved theme BEFORE page renders -->
+    <script>
+        (function () {
+            if (localStorage.getItem('smart_tracker_dark_mode') === 'true') {
+                document.documentElement.classList.add('dark-mode-preload');
+            }
+        })();
+    </script>
+    <style>
+        /* Prevent white flash on dark mode reload */
+        .dark-mode-preload {
+            background-color: #0f172a !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login Cover Page -->
+    <div id="login-cover" class="login-cover light-mode">
+        <div class="login-container glass-panel">
+            <div class="login-illustration-wrapper">
+                <img src="login.png" alt="Security Lock" class="login-illustration" />
+            </div>
+            <div class="login-form-wrapper">
+                <h1 class="login-title">Welcome to SmartTrack</h1>
+                <p class="login-subtitle" id="auth-subtitle">Your personal intelligent finance manager. Please provide
+                    your details.</p>
+
+                <!-- Auth Toggle -->
+                <div class="auth-toggle">
+                    <button class="toggle-btn active" id="toggle-login" onclick="switchAuthMode('login')">Login</button>
+                    <button class="toggle-btn" id="toggle-register" onclick="switchAuthMode('register')">Create
+                        Account</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" required placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="login-password" required placeholder="Enter your password">
+                            <span class="password-toggle" onclick="togglePassword('login-password', this)"
+                                title="Show/Hide Password">🙈</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right; margin-bottom: 20px; margin-top: -10px;">
+                        <a href="#" id="forgot-password-link" style="color: var(--accent-primary); text-decoration: none; font-size: 13px; font-weight: 500; transition: var(--transition);">Forgot Password?</a>
+                    </div>
+                    <button type="submit" class="btn-primary login-btn">Login to Dashboard</button>
+                </form>
+
+                <!-- Registration Form (Hidden by default) -->
+                <form id="registration-form" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reg-fname">First Name</label>
+                            <input type="text" id="reg-fname" required placeholder="John">
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-lname">Last Name</label>
+                            <input type="text" id="reg-lname" required placeholder="Doe">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email">Email Address</label>
+                        <input type="email" id="reg-email" required placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-phone">Phone Number</label>
+                        <input type="tel" id="reg-phone" required placeholder="+91 9876543210">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="reg-password">Create Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-password" required placeholder="Strong password">
+                                <span class="password-toggle" onclick="togglePassword('reg-password', this)"
+                                    title="Show/Hide Password">🙈</span>
+                            </div>
+                            <div id="password-strength-container" style="display: none; margin-top: 8px;">
+                                <div class="strength-bar-bg"
+                                    style="height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 4px;">
+                                    <div id="strength-bar"
+                                        style="height: 100%; width: 0%; transition: width 0.3s ease, background 0.3s ease;">
+                                    </div>
+                                </div>
+                                <div id="strength-text" style="font-size: 12px; font-weight: 600;"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-confirm-password">Confirm Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-confirm-password" required
+                                    placeholder="Confirm password">
+                                <span class="password-toggle" onclick="togglePassword('reg-confirm-password', this)"
+                                    title="Show/Hide Password">🙈</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary login-btn">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="main-app" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <span class="logo-icon">✨</span>
+                <h2>SmartTrack</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-route="dashboard">
+                    <span class="icon">📊</span> Dashboard
+                </li>
+                <li data-route="add-expense">
+                    <span class="icon">➕</span> Add Expense
+                </li>
+                <li data-route="scanner">
+                    <span class="icon">📷</span> Receipt Scanner
+                </li>
+                <li data-route="history">
+                    <span class="icon">📜</span> History
+                </li>
+                <li data-route="budget">
+                    <span class="icon">🎯</span> Budget
+                </li>
+                <li data-route="family">
+                    <span class="icon">🧑‍🤝‍🧑</span> Family & Splits
+                </li>
+                <li data-route="ai-assistant">
+                    <span class="icon">🤖</span> AI Assistant
+                </li>
+                <li data-route="feedback">
+                    <span class="icon">💬</span> Feedback
+                </li>
+            </ul>
+            <div style="margin-top: auto; padding: 0 16px; display: flex; flex-direction: column; gap: 10px;">
+                <!-- Dark Mode Toggle -->
+                <button id="btn-dark-mode-toggle"
+                    style="width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--glass-border); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; font-size: 14px; font-weight: 500;">
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span id="theme-icon">🌙</span>
+                        <span id="theme-label">Dark Mode</span>
+                    </span>
+                    <span id="theme-toggle-knob"
+                        style="width: 40px; height: 22px; border-radius: 11px; background: var(--glass-border); position: relative; transition: background 0.3s ease; flex-shrink: 0;">
+                        <span id="theme-knob-inner"
+                            style="position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent-primary); transition: transform 0.3s ease; display: block;"></span>
+                    </span>
+                </button>
+
+                <button id="btn-logout" class="btn-secondary"
+                    style="width: 100%; border: 1px solid rgba(239, 68, 68, 0.3); background: #fff1f2; color: #ef4444; border-radius: 8px;">
+                    <span class="icon">🚪</span> Logout
+                </button>
+            </div>
+
+        </nav>
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- Mobile Header (Visible on small screens) -->
+        <header class="mobile-header">
+            <div class="logo">
+                <span class="logo-icon">✨</span>
+                <h2>SmartTrack</h2>
+            </div>
+            <button id="btn-mobile-menu" class="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p id="page-subtitle">Welcome back! Here's your financial overview.</p>
+                </div>
+                <div class="user-profile" id="profile-btn" title="Change Profile Name">
+                    <img src="wallet.png" alt="Wallet Art" class="header-illustration" />
+                    <div class="avatar" id="user-avatar-text" style="z-index: 2;">U</div>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <div id="view-container" class="view-container">
+                <!-- Dashboard View (Default) -->
+                <div id="view-dashboard" class="view active-view">
+                    <div class="dashboard-grid prediction-enabled">
+                        <!-- Row 1: Summary Cards -->
+                        <div class="summary-cards-row">
+                            <div class="summary-card highlight">
+                                <h3>Total Spent (Month)</h3>
+                                <h2 class="amount">₹0.00</h2>
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <button id="quick-scan-btn" class="btn-primary"
+                                        style="flex: 1; padding: 8px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <span>📷</span> Quick Scan
+                                    </button>
+                                    <button id="btn-monthly-report" class="btn-secondary"
+                                        style="flex: 1; padding: 8px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--accent-primary);">
+                                        <span>📄</span> Report
+                                    </button>
+                                </div>
+                                <p class="trend positive" style="margin-top: 12px;">↑ tracking active</p>
+                            </div>
+                            <div class="summary-card prediction-card">
+                                <h3>Month-End Prediction</h3>
+                                <h2 class="amount" id="predicted-amount">₹0.00</h2>
+                                <p class="sub-text" id="prediction-status">Calculating...</p>
+                            </div>
+                            <div class="summary-card">
+                                <h3>Monthly Budget</h3>
+                                <h2 class="amount">₹0.00</h2>
+                                <p class="sub-text">0% used</p>
+                            </div>
+                            <div class="summary-card">
+                                <h3>Savings Goal</h3>
+                                <h2 class="amount">₹0.00</h2>
+                                <p class="sub-text">Projected: ₹0.00</p>
+                            </div>
+                            <div class="summary-card">
+                                <h3>Daily Average</h3>
+                                <h2 class="amount" id="daily-avg-amount">₹0</h2>
+                                <p class="sub-text">per day this month</p>
+                            </div>
+                            <div class="summary-card">
+                                <h3>Top Category</h3>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                    <span style="font-size: 24px;" id="top-cat-icon">❓</span>
+                                    <h2 class="amount" id="top-cat-name" style="margin: 0; font-size: 24px;">?</h2>
+                                </div>
+                                <p class="sub-text">No data yet</p>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Widgets Area -->
+                        <div class="widgets-row">
+                            <!-- Financial Health Score -->
+                            <div class="summary-card" style="align-items: center; text-align: center;">
+                                <h3 style="align-self: flex-start; margin-bottom: 24px;">💳 Financial Health Score</h3>
+                                <div class="health-ring"
+                                    style="width: 120px; height: 120px; border-radius: 50%; border: 8px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                                    <div>
+                                        <h2 style="font-size: 32px; margin: 0;">0</h2>
+                                        <p style="font-size: 12px; color: var(--text-secondary);">Loading</p>
+                                    </div>
+                                </div>
+                                <div
+                                    style="width: 100%; font-size: 13px; text-align: left; color: var(--text-secondary);">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span><span style="color: #6366f1;">●</span> Budget adherence</span>
+                                        <span>-</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span><span style="color: #10b981;">●</span> Savings progress</span>
+                                        <span>-</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between;"><span><span
+                                                style="color: #f59e0b;">●</span> Consistency</span> <span>-</span></div>
+                                </div>
+                            </div>
+
+                            <!-- Smart Alerts Panel -->
+                            <div class="summary-card" id="dashboard-alerts" style="justify-content: flex-start;">
+                                <h3 style="margin-bottom: 16px;">🚨 Smart Alerts</h3>
+                                <div class="alert-item"
+                                    style="color: var(--success); background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px;">
+                                    <strong>Loading alerts...</strong>
+                                </div>
+                            </div>
+
+                            <!-- Smart Recommendations Panel -->
+                            <div class="summary-card" style="justify-content: flex-start; text-align: center;">
+                                <h3 style="margin-bottom: 16px; align-self: flex-start;">💡 Smart Recommendations</h3>
+                                <div id="smart-insights-container"
+                                    style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 12px; width: 100%; overflow-y: auto;">
+                                    <p
+                                        style="color: var(--text-secondary); font-size: 14px; align-self: center; margin-top: 20px;">
+                                        Analysing your spending...</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Charts Area — 3 separate charts -->
+                        <div class="charts-row three-charts">
+                            <!-- Chart 1: Daily (7 days) -->
+                            <div class="summary-card chart-container">
+                                <div class="chart-header">
+                                    <h3>📅 Daily (7 Days)</h3>
+                                    <span class="chart-badge">Line</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 180px;">
+                                    <canvas id="chart-daily"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Chart 2: Weekly (4 weeks) -->
+                            <div class="summary-card chart-container">
+                                <div class="chart-header">
+                                    <h3>📆 Weekly (4 Weeks)</h3>
+                                    <span class="chart-badge">Bar</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 180px;">
+                                    <canvas id="chart-weekly"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Chart 3: Monthly (6 months) -->
+                            <div class="summary-card chart-container">
+                                <div class="chart-header">
+                                    <h3>🗓️ Monthly (6 Months)</h3>
+                                    <span class="chart-badge">Bar</span>
+                                </div>
+                                <div style="flex: 1; position: relative; min-height: 180px;">
+                                    <canvas id="chart-monthly"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Category Pie chart (full width) -->
+                        <div class="charts-row">
+                            <div class="summary-card chart-container pie-chart-box"
+                                style="max-width: 400px; margin: 0 auto;">
+                                <h3 style="margin-bottom: 16px;">🍩 Category Breakdown</h3>
+                                <div style="flex: 1; position: relative; min-height: 220px;">
+                                    <canvas id="categoryChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <!-- Add Expense View (Hidden initially) -->
+                <div id="view-add-expense" class="view">
+                    <div class="glass-panel form-container">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h2 style="margin: 0; font-size: 20px;">Log New Expense</h2>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" id="btn-launch-scanner" class="btn-primary"
+                                    style="width: auto; padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                                    <span>📷</span> Scanner
+                                </button>
+                                <label for="receipt-upload" class="btn-secondary"
+                                    style="width: auto; padding: 8px 16px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; border: 1px dashed var(--glass-border);">
+                                    <span>📁</span> Upload
+                                    <input type="file" id="receipt-upload" accept="image/*" capture="environment"
+                                        style="display: none;">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- OCR Progress & Items -->
+
+                        <div id="ocr-loader"
+                            style="display: none; background: rgba(99, 102, 241, 0.1); border: 1px solid var(--accent-primary); border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center; animation: pulse 2s infinite;">
+                            <p style="margin: 0; font-weight: 600; color: var(--accent-primary);" id="ocr-status-text">
+                                Initializing OCR...</p>
+                            <div
+                                style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; margin-top: 10px; overflow: hidden;">
+                                <div id="ocr-progress-bar"
+                                    style="width: 0%; height: 100%; background: var(--accent-primary); transition: width 0.3s ease;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OCR Items Preview (Hidden initially) -->
+                        <div id="ocr-items-container"
+                            style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                                <div id="ocr-image-preview"
+                                    style="width: 60px; height: 80px; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.2);">
+                                    <!-- Thumbnail injected via JS -->
+                                    <span style="font-size: 20px; opacity: 0.3;">🖼️</span>
+                                </div>
+                                <div style="flex: 1;">
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                        <h4 style="margin: 0; font-size: 14px; opacity: 0.8;">Extracted Items</h4>
+                                        <button type="button" id="btn-clear-ocr"
+                                            style="background: transparent; border: none; color: #ef4444; font-size: 12px; cursor: pointer;">Clear
+                                            All</button>
+                                    </div>
+                                    <p style="font-size: 11px; opacity: 0.5; margin: 0;">Click item name or price to
+                                        edit.</p>
+                                </div>
+                            </div>
+                            <div id="ocr-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+                                <!-- Items injected via JS -->
+                            </div>
+                            <div
+                                style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--glass-border); display: flex; justify-content: space-between; font-weight: 600; font-size: 14px;">
+                                <span>Total:</span>
+                                <span id="ocr-total-display">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- ===== Voice Input Panel ===== -->
+                        <div class="voice-panel" id="voice-panel">
+                            <div class="voice-panel-header">
+                                <div class="voice-panel-label">
+                                    <span>&#127897;&#65039;</span>
+                                    <span>Voice Input</span>
+                                </div>
+                                <span class="voice-status-badge" id="voice-status-badge">Ready</span>
+                            </div>
+                            <div class="voice-mic-wrapper">
+                                <button type="button" class="mic-btn" id="mic-btn" title="Click to speak">
+                                    <span class="mic-icon" id="mic-icon">&#127908;</span>
+                                    <div class="mic-pulse-ring" id="mic-pulse-ring"></div>
+                                </button>
+                                <p class="voice-hint" id="voice-hint">Tap to start recording</p>
+                            </div>
+                            <div class="voice-transcript-box" id="voice-transcript-box" style="display:none;">
+                                <p class="voice-transcript-label">Heard:</p>
+                                <p class="voice-transcript-text" id="voice-transcript-text"></p>
+                            </div>
+                            <div class="voice-parsed-preview" id="voice-parsed-preview" style="display:none;">
+                                <p class="voice-transcript-label">Detected:</p>
+                                <div class="voice-parsed-chips" id="voice-parsed-chips"></div>
+                                <div class="voice-parsed-actions">
+                                    <button type="button" class="btn-voice-apply" id="btn-voice-apply">&#9989; Apply to
+                                        Form</button>
+                                    <button type="button" class="btn-voice-discard" id="btn-voice-discard">&#10006;
+                                        Discard</button>
+                                </div>
+                            </div>
+                            <p class="voice-error" id="voice-error" style="display:none;"></p>
+                            <p class="voice-examples">Try: <em>"Add 200 rupees for food"</em>
+                                &nbsp;&nbsp;&middot;&nbsp;&nbsp; <em>"Spent 500 on uber"</em></p>
+                        </div>
+
+                        <div class="voice-divider"><span>or fill manually</span></div>
+                        <form id="expense-form">
+                            <div class="form-group">
+                                <label for="amount">Amount (₹)</label>
+                                <input type="number" id="amount" required placeholder="0.00" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="date">Date</label>
+                                <input type="date" id="date" required
+                                    style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: var(--text-primary);">
+                            </div>
+                            <div class="form-group">
+                                <label for="description">Description (Auto-categorized!)</label>
+                                <input type="text" id="description" required
+                                    placeholder="e.g., Uber to college, Groceries at Walmart">
+                            </div>
+                            <!-- Category will be filled automatically -->
+                            <div class="form-group">
+                                <label for="category">Category</label>
+                                <select id="category">
+                                    <option value="food">Food & Dining</option>
+                                    <option value="transportation">Transportation</option>
+                                    <option value="shopping">Shopping</option>
+                                    <option value="bills">Bills & Utilities</option>
+                                    <option value="entertainment">Entertainment</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" id="split-checkbox">
+                                    <span class="checkmark"></span>
+                                    Split this expense with family?
+                                </label>
+                            </div>
+                            <div id="split-members-container" class="form-group"
+                                style="display: none; border-top: 1px solid var(--glass-border); padding-top: 16px; margin-top: 8px;">
+                                <label
+                                    style="margin-bottom: 12px; display: block; font-size: 14px; opacity: 0.8;">Select
+                                    members to split with (including you):</label>
+                                <div id="family-checklist" class="family-checklist">
+                                    <!-- Family members injected via JS -->
+                                    <p style="font-size: 13px; color: var(--text-secondary);">No family members added
+                                        yet. <a href="#" onclick="window.appRouter.navigate('family'); return false;"
+                                            style="color: var(--accent-primary); text-decoration: none;">Add members
+                                            first</a></p>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top: 24px;">Add Expense</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- History View (Hidden initially) -->
+                <div id="view-history" class="view">
+                    <div class="glass-panel">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h2 style="margin: 0;">Recent Transactions</h2>
+                            <div style="display: flex; gap: 12px;">
+                                <button id="btn-export-excel" class="btn-secondary"
+                                    style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                    <span>📊</span> Excel
+                                </button>
+                                <button id="btn-export-pdf" class="btn-secondary"
+                                    style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                                    <span>📕</span> PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div class="transaction-list" id="transaction-list">
+                            <!-- Transactions injected via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget & Goals View -->
+                <div id="view-budget" class="view" style="padding-bottom: 40px; overflow-y: auto;">
+                    <div
+                        style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; width: 100%; align-items: start;">
+                        <!-- Left Column: Planning (Budget Limit & Add Goal) -->
+                        <div style="display: flex; flex-direction: column; gap: 24px;">
+                            <!-- Monthly Budget Panel -->
+                            <div class="summary-card"
+                                style="justify-content: flex-start; position: relative; overflow: hidden;">
+                                <img src="wallet.png" alt="Budget Art" class="budget-illustration"
+                                    style="opacity: 0.15; position: absolute; right: -20px; top: -20px; width: 150px; z-index: 1;" />
+                                <h3 style="position: relative; z-index: 2;">🎯 Monthly Plan</h3>
+                                <p
+                                    style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; position: relative; z-index: 2;">
+                                    Set your overarching monthly budget limit.</p>
+                                <form id="budget-form" style="position: relative; z-index: 2; width: 100%;">
+                                    <div class="form-group">
+                                        <label for="monthly-budget">Monthly Budget Limit (₹)</label>
+                                        <input type="number" id="monthly-budget" required placeholder="3000" step="1">
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="margin: 0;">Save Limit</button>
+                                </form>
+                            </div>
+
+                            <!-- Create New Goal Panel -->
+                            <div class="summary-card" style="justify-content: flex-start;">
+                                <h3>➕ Create Savings Goal</h3>
+                                <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Save up
+                                    for a laptop, trip, or rainy day.</p>
+                                <form id="create-goal-form"
+                                    style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                                    <div class="form-group" style="margin: 0;">
+                                        <label for="goal-name">Goal Name</label>
+                                        <input type="text" id="goal-name" required placeholder="e.g. New iPhone">
+                                    </div>
+                                    <div class="form-row" style="margin: 0; display: flex; gap: 12px;">
+                                        <div class="form-group" style="margin: 0; flex: 1;">
+                                            <label for="goal-target">Target (₹)</label>
+                                            <input type="number" id="goal-target" required min="1" placeholder="50000">
+                                        </div>
+                                        <div class="form-group" style="margin: 0; flex: 1;">
+                                            <label for="goal-deadline">Deadline (Optional)</label>
+                                            <input type="date" id="goal-deadline"
+                                                style="color: var(--text-primary); background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%;">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="margin-top: 8px;">Add Goal</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: My Savings Goals -->
+                        <div class="summary-card" style="justify-content: flex-start; grid-row: span 2;">
+                            <h3 style="margin-bottom: 20px;">🚀 My Savings Goals</h3>
+                            <div id="goals-list-container"
+                                style="display: flex; flex-direction: column; gap: 16px; width: 100%; overflow-y: auto; max-height: 600px; padding-right: 8px;">
+                                <!-- Goals injected via JS -->
+                                <div class="empty-state" style="text-align: center; padding: 40px 0; opacity: 0.6;">
+                                    <span style="font-size: 48px;">🏆</span>
+                                    <p>No active goals yet. Dream big!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feedback View (Hidden initially) -->
+                <div id="view-feedback" class="view">
+                    <div class="glass-panel form-container">
+                        <h2>Send us your Feedback!</h2>
+                        <form id="feedback-form">
+                            <div class="form-group">
+                                <label for="fb-name">Name</label>
+                                <input type="text" id="fb-name" required placeholder="John Doe">
+                            </div>
+                            <div class="form-group">
+                                <label for="fb-email">Email Address</label>
+                                <input type="email" id="fb-email" required placeholder="john@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label for="fb-rating">Rating (1-5)</label>
+                                <input type="number" id="fb-rating" required min="1" max="5" placeholder="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="fb-comments">Comments</label>
+                                <textarea id="fb-comments" required rows="4" placeholder="Tell us what you think..."
+                                    style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.05); color: var(--text-primary); font-family: inherit; resize: vertical; margin-bottom: 24px;"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Submit Feedback</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Family & Splits View -->
+                <div id="view-family" class="view">
+                    <div class="dashboard-grid">
+                        <!-- Left Column: Manage Members -->
+                        <div class="summary-card" style="justify-content: flex-start;">
+                            <h3>🧑‍🤝‍🧑 Manage Family Members</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Add people
+                                you frequently split expenses with.</p>
+
+                            <form id="add-family-form"
+                                style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <input type="text" id="new-member-name" placeholder="Name (e.g. Mom, Dad)" required
+                                        style="width: 100%; padding: 10px;">
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" id="new-member-relation" placeholder="Relation (e.g. Mother)"
+                                            style="flex: 1; padding: 10px;">
+                                        <input type="tel" id="new-member-phone" placeholder="Phone Number"
+                                            style="flex: 1; padding: 10px;">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary"
+                                    style="margin: 0; width: 100%; padding: 10px 16px;">Add Member</button>
+                            </form>
+
+                            <div id="family-members-list" class="member-list">
+                                <!-- Members injected via JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Split Balances -->
+                        <div class="summary-card" style="justify-content: flex-start;">
+                            <h3>💰 Split Balances</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Summary of
+                                who owes you from split expenses.</p>
+
+                            <div id="split-balances-container" class="balance-list">
+                                <!-- Balances injected via JS -->
+                                <div class="empty-state" style="text-align: center; padding: 40px 0; opacity: 0.6;">
+                                    <span style="font-size: 48px;">💸</span>
+                                    <p>No active splits or balances.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Assistant View -->
+                <div id="view-ai-assistant" class="view">
+                    <div class="dashboard-grid"
+                        style="grid-template-columns: 1fr; height: calc(100vh - 120px); max-height: 800px;">
+                        <div class="summary-card"
+                            style="display: flex; flex-direction: column; padding: 0; overflow: hidden; height: 100%;">
+                            <!-- Header -->
+                            <div
+                                style="padding: 20px; border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); display: flex; align-items: center; gap: 12px;">
+                                <div style="font-size: 32px;">🤖</div>
+                                <div>
+                                    <h3 style="margin: 0;">Smart Assistant</h3>
+                                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">Online and
+                                        analyzing your data</p>
+                                </div>
+                            </div>
+
+                            <!-- Chat History -->
+                            <div id="chat-history" class="chat-history">
+                                <div class="chat-message assistant-message">
+                                    <div class="message-bubble">Hello! I'm your Smart Finance Assistant. I can analyze
+                                        your spending, check your budget, and give you stats based on your dashboard.
+                                        Try asking: "How much did I spend this month?"</div>
+                                </div>
+                            </div>
+
+                            <!-- Input Area -->
+                            <div
+                                style="padding: 20px; border-top: 1px solid var(--glass-border); background: rgba(0,0,0,0.2);">
+                                <form id="chat-form" style="display: flex; gap: 12px; margin: 0;">
+                                    <input type="text" id="chat-input"
+                                        placeholder="Ask me about your budget, spending, or categories..." required
+                                        style="flex: 1; border-radius: 20px; padding: 12px 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: var(--text-primary); font-family: inherit;">
+                                    <button type="submit" class="btn-primary"
+                                        style="margin: 0; border-radius: 50%; min-width: 48px; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-primary);">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div id="profile-modal" class="modal-overlay">
+        <div class="glass-panel modal-content" style="max-width: 450px;">
+            <h2>Your Profile Details</h2>
+            <div class="form-row" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label for="profile-fname">First Name</label>
+                    <input type="text" id="profile-fname">
+                </div>
+                <div class="form-group">
+                    <label for="profile-lname">Last Name</label>
+                    <input type="text" id="profile-lname">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="profile-email">Email Address</label>
+                <input type="email" id="profile-email" readonly style="opacity: 0.6; cursor: not-allowed;">
+            </div>
+            <div class="form-group">
+                <label for="profile-phone">Phone Number</label>
+                <input type="tel" id="profile-phone">
+            </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-profile" class="btn-secondary">Cancel</button>
+                <button id="btn-save-profile" class="btn-primary"
+                    style="margin-top: 0; width: auto; padding: 12px 24px;">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Live Scanner Modal -->
+    <div id="scanner-modal" class="modal-overlay">
+        <div class="glass-panel scanner-content"
+            style="max-width: 600px; width: 95%; height: auto; max-height: 90vh; padding: 0; overflow: hidden; position: relative; border: none;">
+            <div class="scanner-header"
+                style="padding: 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); position: absolute; top:0; left:0; width: 100%; z-index: 10;">
+                <h3 style="margin:0; font-size: 16px; color: white; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">📄</span> Live Receipt Scanner
+                </h3>
+                <button type="button" id="btn-close-scanner"
+                    style="background:rgba(255,255,255,0.1); border:none; color:white; font-size: 20px; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor:pointer; transition: background 0.3s;">&times;</button>
+            </div>
+
+            <div class="viewfinder-container"
+                style="position: relative; background: #000; width: 100%; aspect-ratio: 9/16; max-height: calc(90vh - 120px); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <video id="scanner-video" autoplay playsinline
+                    style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <canvas id="scanner-canvas" style="display: none;"></canvas>
+
+                <!-- Scanner HUD -->
+                <div class="scanner-hud">
+                    <div class="scanner-frame">
+                        <span class="sc-tr"></span>
+                        <span class="sc-bl"></span>
+                    </div>
+                    <div class="scanner-laser"></div>
+                </div>
+
+                <div id="scanner-msg"
+                    style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 500; pointer-events: none; white-space: nowrap; backdrop-filter: blur(4px);">
+                    Align receipt within the frame
+                </div>
+            </div>
+
+            <div class="scanner-controls"
+                style="padding: 24px; background: #0f172a; display: flex; justify-content: center; align-items: center; gap: 32px;">
+                <button type="button" id="btn-capture-receipt" class="capture-btn">
+                    <div class="capture-btn-inner"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgot-password-modal" class="modal-overlay">
+        <div class="glass-panel modal-content" style="max-width: 400px;">
+            <h2>Reset Password</h2>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; text-align: center;">Verify your identity to choose a new password.</p>
+            
+            <form id="forgot-password-form">
+                <div class="form-group">
+                    <label for="reset-email">Email Address</label>
+                    <input type="email" id="reset-email" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="reset-phone">Phone Number</label>
+                    <input type="tel" id="reset-phone" required placeholder="+91 9876543210">
+                </div>
+                <div class="form-group">
+                    <label for="reset-new-password">New Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="reset-new-password" required placeholder="Enter new password">
+                        <span class="password-toggle" onclick="togglePassword('reset-new-password', this)">🙈</span>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-cancel-reset" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary" style="margin-top: 0; width: auto; padding: 12px 24px;">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-item active" data-route="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Home</span>
+        </div>
+        <div class="bottom-nav-item" data-route="add-expense">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">Add</span>
+        </div>
+        <div class="bottom-nav-item" data-route="history">
+            <span class="nav-icon">📜</span>
+            <span class="nav-label">History</span>
+        </div>
+        <div class="bottom-nav-item" data-route="ai-assistant">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-label">AI</span>
+        </div>
+    </nav>
+    
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@v4.0.2/dist/tesseract.min.js"></script>
+    <!-- Dependency Libraries for Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- App Scripts -->
+    <script src="store_new.js?v=1.0.4"></script>
+    <script src="ocr_manager.js?v=1.0.4"></script>
+    <script src="scanner_manager.js?v=1.0.4"></script>
+    <script src="export_manager.js?v=1.0.4"></script>
+    <script src="app_new.js?v=1.0.4"></script>
+</body>
+
+</html>
